@@ -64,7 +64,7 @@ RecordWorkTimeDesktopName.xml を開くと、以下の記述がある。
   <Actions Context="Author">
     <Exec>
       <Command>conhost</Command>
-      <Arguments>conhost --headless powershell -NoProfile -ExecutionPolicy Bypass -File C:\workspace\development\project\Record-WorkedTimeAndDesktopName\Record-WorkedTimeAndDesktopName.ps1 -EventID $(EventID)</Arguments>
+      <Arguments>--headless powershell -NoProfile -ExecutionPolicy Bypass -File C:\workspace\development\project\Record-WorkedTimeAndDesktopName\Record-WorkedTimeAndDesktopName.ps1 -EventID $(EventID)</Arguments>
       <WorkingDirectory>C:\workspace\development\project\Record-WorkedTimeAndDesktopName</WorkingDirectory>
     </Exec>
   </Actions>
