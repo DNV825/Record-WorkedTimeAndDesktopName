@@ -18,7 +18,7 @@
     +----------------+----------+----------+----------+----------------------------+
   
   デスクトップ名を作業内容として利用するため、あらかじめ必要なデスクトップを作成しておくこと。
-  また、作業時間は Excel で計算したほうが楽なので、本スクリプトでは算出しない。
+  また、作業時間は本スクリプトでも出力するが、 Excel で計算したほうが良いかもしれない。
   
   なお、本スクリプトを実行するには VirtualDesktop モジュールが必要となる。
   VirtualDesktop モジュールを管理者権限なしでインストールするには以下のコマンドを実行すること（管理者権限がある場合は -Scope CurrentUser の指定は不要。）
@@ -80,8 +80,9 @@ $LogFilePath = "$(Split-Path $PSCommandPath -Parent)\log\WorkedTimeAndDesktopNam
 
 # 記録する日時とデスクトップ名を取得する。
 # わかりやすさのため、日付部分だけを変数化しておく（半角スペースで分割し、日付部分だけを取り出す。）
-$CurrentDateTime = Get-Date -Format "yyyy/MM/dd HH:mm"
-$CurrentDate = (-split $CurrentDateTime)[0]
+$CurrentDateTime = Get-Date
+$CurrentDateTimeFormatted = $CurrentDateTime.ToString("yyyy/MM/dd HH:mm")
+$CurrentDate = (-split $CurrentDateTimeFormatted)[0]
 $CurrentDesktopName = Get-DesktopName
 
 #------------------------------------------------------------------------------
@@ -93,7 +94,7 @@ if ((Test-Path $LogFilePath) -eq $true) {
     # 出力先ファイルの最終行を読み取って正規表現で各項目に分割し、内容を取得する。
     # 読み取れた内容に応じて書き込み内容を変更する。
     #------------------------------------------------------------------------------
-    $IsMatched = (Get-Content -Tail 1 -Path $LogFilePath -Encoding UTF8) -match "^(?<Date>.+)\t(?<StartedTime>.+)\t(?<FinishedTime>.*)\t\t(?<DesktopName>.+)$"    
+    $IsMatched = (Get-Content -Tail 1 -Path $LogFilePath -Encoding UTF8) -match "^(?<Date>.+)\t(?<StartedDateTime>.+)\t(?<FinishedDateTime>.+)\t(?<WorkedTime>.+)\t(?<DesktopName>.+)$"
 
     #------------------------------------------------------------------------------
     # 最終行が正しく書き込まれている場合、正規表現と一致する。
@@ -114,20 +115,34 @@ if ((Test-Path $LogFilePath) -eq $true) {
             # 最終行のデスクトップ名と現在のデスクトップ名が等しい場合、作業を継続しているとみなして終了時刻を現在時刻へ更新する。
             # ただし、 PC 起動時は作業の継続ではないとみなし、最終行を更新せずに次の行へ追記する。
             if ($EventID -eq [EventIDs]::PowerOn.Value__) {
-                Add-Content -Path $LogFilePath -Value "`r`n${CurrentDate}`t${CurrentDateTime}`t${CurrentDateTime}`t`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+
+                Add-Content -Path $LogFilePath -Value "`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+
             } else {
-                Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedTime'])`t${CurrentDateTime}`t`t$($Matches['DesktopName'])" -NoNewline -Encoding UTF8
+                $ElapsedHours = $CurrentDateTime - [DateTime]::ParseExact($Matches['StartedDateTime'], "yyyy/MM/dd HH:mm", $null)
+                $WorkedTime = [String]::Format("{0:F1}", $ElapsedHours.TotalHours) # "{0:F1}" -f xx.TotalHours とも書ける。
+
+                Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])" -NoNewline -Encoding UTF8
             }
         } else {
+
             # 最終行のデスクトップ名と現在のデスクトップ名が等しくない場合、別の作業を開始しているとみなす。
             # そのため、最終行の終了時刻に現在時刻を記録し、次の行に現在時刻で作業を開始した旨を追記する。
-            Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedTime'])`t${CurrentDateTime}`t`t$($Matches['DesktopName'])`r`n$($Matches['Date'])`t${CurrentDateTime}`t${CurrentDateTime}`t`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+            $ElapsedHours = $CurrentDateTime - [DateTime]::ParseExact($Matches['StartedDateTime'], "yyyy/MM/dd HH:mm", $null)
+            $WorkedTime = [String]::Format("{0:F1}", $ElapsedHours.TotalHours) # "{0:F1}" -f xx.TotalHours とも書ける。
+
+            Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`r`n$($Matches['Date'])`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+
         }
     } else {
-        # 最終行の記述が想定通りでない場合、"Something wrong!"、改行、「年月日」、「開始時刻」、「作業種別（デスクトップ名）」を書き込む。
-        Add-Content -Path $LogFilePath -Value "Something wrong!`r`n${CurrentDate}`t${CurrentDateTime}`t${CurrentDateTime}`t`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+
+        # 最終行の記述が想定通りでない場合、"<Something wrong!>"、改行、「年月日」、「開始時刻」、「作業時間」、「作業種別（デスクトップ名）」を書き込む。
+        Add-Content -Path $LogFilePath -Value "<Something wrong!>`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+
     }
 } else {
+
     # 出力先ファイルが存在しない場合、ファイルを新規作成して「年月日」、「開始時刻」、「終了時刻」「作業種別（デスクトップ名）」を書き込む。
-    Set-Content -Path $LogFilePath -Value "${CurrentDate}`t${CurrentDateTime}`t${CurrentDateTime}`t`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+    Set-Content -Path $LogFilePath -Value "${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+
 }
