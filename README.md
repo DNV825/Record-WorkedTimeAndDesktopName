@@ -113,7 +113,7 @@ PowerShell Gallery が「信頼されていないリポジトリ」扱いされ�
 
 ## 使い方
 
-準備が整うとタスクスケジューラーがスクリプトを実行し始め、フォルダに WorkedTimeAndDesktopName.log が出力される。
+準備が整うとタスクスケジューラーがスクリプトを実行し始め、 /log/WorkedTimeAndDesktopName.log が出力される。
 
 必要に応じて WorkedTimeAndDesktopName.log を開き、 Excel にコピペすれば作業時間を算出することができる。
 

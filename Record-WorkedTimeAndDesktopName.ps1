@@ -73,7 +73,7 @@ Enum EventIDs {
     Hybernate = 109;
 }
 
-# スクリプトと同じフォルダにログファイルを出力する。
+# スクリプトの置いてあるフォルダ配下の log フォルダへログファイルを出力する。
 # 別の場所に置きたい場合は好きなパスを指定すればよい。
 $LogFilePath = "$(Split-Path $PSCommandPath -Parent)\log\WorkedTimeAndDesktopName.log"
 
