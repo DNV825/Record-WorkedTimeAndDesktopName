@@ -73,9 +73,9 @@ Enum EventIDs {
     Hybernate = 109;
 }
 
-# スクリプトの置いてあるフォルダ配下の log フォルダへログファイルを出力する。
+# プロジェクトフォルダ配下の log フォルダへログファイルを出力する。
 # 別の場所に置きたい場合は好きなパスを指定すればよい。
-$LogFilePath = "$(Split-Path $PSCommandPath -Parent)\log\WorkedTimeAndDesktopName.log"
+$LogFilePath = "$(Split-Path $PSCommandPath -Parent)\..\log\Record-WorkedTimeAndDesktopName.log"
 
 
 # 記録する日時とデスクトップ名を取得する。
