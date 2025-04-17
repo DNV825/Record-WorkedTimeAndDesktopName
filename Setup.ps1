@@ -1,14 +1,47 @@
+<#
+  .synopsis
 
+  Record-WorkedTimeAndDesktopName のインストール、またはアンインストールを実行する。
 
-# https://learn.microsoft.com/ja-jp/windows-server/administration/windows-commands/schtasks-create
-# https://learn.microsoft.com/ja-jp/windows-server/administration/windows-commands/schtasks-delete
-# https://qiita.com/a-hiroyuki/items/8acb873de60f8e4976db
-# https://zenn.dev/haretokidoki/articles/24ac3ba42d8050
-# https://zenn.dev/haretokidoki/articles/24ac3ba42d8050
-# https://note.com/nerone1024/n/n5e470a82064f
-# https://learn.microsoft.com/ja-jp/powershell/scripting/overview?view=powershell-7.5
-#
-# "Install" or "Uninstall"
+  .description
+    
+  インストールする場合は以下の手続きを実行する。
+
+    1. Virtual Desktop モジュールをインストールする。
+    2. タスクスケジューラーへタスク「Record-WorkedTimeAndDesktopName」を登録する。
+
+  アンインストールする場合は以下の手続きを実行する。
+
+    1. タスクスケジューラーからタスク「Record-WorkedTimeAndDesktopName」を削除する。
+    2. Virtual Desktop モジュールをアンインストールする。
+
+  コマンドプロンプトからの実行を想定しており、管理者権限ありでコマンドプロンプトを起動する必要がある。
+  
+  .notes
+
+  VirtualDesktop モジュールのインストール・インポート時に以下の警告が表示されるが、どちらも Y を入力して進めること。
+
+    続行するには NuGet プロバイダーが必要です
+      PowerShellGet で NuGet ベースのリポジトリを操作するには、'2.8.5.201' 以降のバージョンの NuGet
+      プロバイダーが必要です。NuGet プロバイダーは 'C:\Program Files\PackageManagement\ProviderAssemblies' または
+      'C:\Users\xxx\AppData\Local\PackageManagement\ProviderAssemblies' に配置する必要があります。'Install-PackageProvider
+      -Name NuGet -MinimumVersion 2.8.5.201 -Force' を実行して NuGet プロバイダーをインストールすることもできます。今すぐ
+      PowerShellGet で NuGet プロバイダーをインストールしてインポートしますか?
+      [Y] はい(Y)  [N] いいえ(N)  [S] 中断(S)  [?] ヘルプ (既定値は "Y"): Y
+
+    信頼されていないリポジトリ
+      信頼されていないリポジトリからモジュールをインストールしようとしています。このリポジトリを信頼する場合は、Set-PSReposit
+      ory コマンドレットを実行して、リポジトリの InstallationPolicy の値を変更してください。'PSGallery'
+      からモジュールをインストールしますか?
+      [Y] はい(Y)  [A] すべて続行(A)  [N] いいえ(N)  [L] すべて無視(L)  [S] 中断(S)  [?] ヘルプ (既定値は "N"): Y
+
+  NuGet はモジュールのインストールに必要なツールのため問題ない。
+  Virtual Desktop モジュールは信頼して使うことにする。
+
+  .parameter ActionType
+
+  "install" か "uninstall" のいずれかを指定する。
+#>
 Param (
     [Parameter(Mandatory=$true)]
     [String]
@@ -81,6 +114,7 @@ function Install($TaskName) {
 
         Write-Host "      Virtual Desktop モジュールをインストールします。"
         Write-Host "      インストールしたくない場合、 n を入力してインストールを終了してください。"
+        Write-Host "      選択肢が表示されるまで、少々お待ちください。"
         Install-Module VirtualDesktop -Scope CurrentUser
         Import-Module VirtualDesktop
         $DesktopName = Get-DesktopName
@@ -117,7 +151,7 @@ function Install($TaskName) {
         Write-Host "      すでにタスク名 ${TaskName} が登録されています。"
         $UserInput = Read-Host "      既存の ${TaskName} を削除し、新たに登録しなおしますか？ [y/N]"
 
-        if ($UserInput -eq "y") {
+        if ($UserInput -eq "y" -or $UserInput -eq "Y") {
 
             Write-Host "      タスク名 ${TaskName} を削除し、再登録します。"
             schtasks /end /tn $TaskName
@@ -127,7 +161,7 @@ function Install($TaskName) {
         } else {
             
             Write-Host "      タスクの登録は行わず、インストール手続きを終了します。"
-            return
+
         }
 
     } else {
@@ -192,7 +226,7 @@ function Uninstall($TaskName) {
         Write-Host "      アンインストールしたくない場合、 n を入力してアンインストールを終了してください。"
         $UserInput = Read-Host "      Virtual Desktop モジュールをアンインストールしますか？ [y/N]"
 
-        if ($UserInput -eq "y") {
+        if ($UserInput -eq "y"-or $UserInput -eq "Y") {
 
             Uninstall-Module VirtualDesktop
 

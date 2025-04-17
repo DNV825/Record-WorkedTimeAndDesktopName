@@ -20,33 +20,11 @@
   デスクトップ名を作業内容として利用するため、あらかじめ必要なデスクトップを作成しておくこと。
   また、作業時間は本スクリプトでも出力するが、 Excel で計算したほうが良いかもしれない。
   
-  なお、本スクリプトを実行するには VirtualDesktop モジュールが必要となる。
-  VirtualDesktop モジュールを管理者権限なしでインストールするには以下のコマンドを実行すること（管理者権限がある場合は -Scope CurrentUser の指定は不要。）
-   
-    Install-Module VirtualDesktop -Scope CurrentUser
-    Import-Module VirtualDesktop
-    Get-DesktopName
-  
-  .notes
+  なお、本スクリプトの実行には VirtualDesktop モジュールが必要となる。
 
-  VirtualDesktop モジュールのインストール・インポート時に以下の警告が表示されるが、どちらも Y を入力して進めること。
+  .parameter EventID
 
-    続行するには NuGet プロバイダーが必要です
-      PowerShellGet で NuGet ベースのリポジトリを操作するには、'2.8.5.201' 以降のバージョンの NuGet
-      プロバイダーが必要です。NuGet プロバイダーは 'C:\Program Files\PackageManagement\ProviderAssemblies' または
-      'C:\Users\xxx\AppData\Local\PackageManagement\ProviderAssemblies' に配置する必要があります。'Install-PackageProvider
-      -Name NuGet -MinimumVersion 2.8.5.201 -Force' を実行して NuGet プロバイダーをインストールすることもできます。今すぐ
-      PowerShellGet で NuGet プロバイダーをインストールしてインポートしますか?
-      [Y] はい(Y)  [N] いいえ(N)  [S] 中断(S)  [?] ヘルプ (既定値は "Y"): Y
-
-    信頼されていないリポジトリ
-      信頼されていないリポジトリからモジュールをインストールしようとしています。このリポジトリを信頼する場合は、Set-PSReposit
-      ory コマンドレットを実行して、リポジトリの InstallationPolicy の値を変更してください。'PSGallery'
-      からモジュールをインストールしますか?
-      [Y] はい(Y)  [A] すべて続行(A)  [N] いいえ(N)  [L] すべて無視(L)  [S] 中断(S)  [?] ヘルプ (既定値は "N"): Y
-
-  NuGet はモジュールのインストールに必要なツールのため問題ない。
-  PowerShell Gallery が「信頼されていないリポジトリ」扱いされる理由はわからない。 Microsoft が運営しているリポジトリなのだが…。
+  イベントビューアーから取得したイベント ID 。
 
   .link
 
