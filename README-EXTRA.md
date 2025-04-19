@@ -17,3 +17,12 @@ C:\<ダウンロードした場所のパス>\Saved\VirtualDesktop\1.5.10\Virtual
 C:\<ダウンロードした場所のパス>\Saved\VirtualDesktop\1.5.10\VirtualDesktop.psd1 NotSigned                  
 C:\<ダウンロードした場所のパス>\Saved\VirtualDesktop\1.5.10\VirtualDesktop.psm1 NotSigned  
 ```
+
+## 管理者権限でバッチファイルを起動するとカレントディレクトリが変わってしまう問題への対応
+
+以下、カレントディレクトリをバッチファイルと同じ場所にするイディオム。
+管理者権限ありでバッチファイルを起動すると、カレントディレクトリが別の場所に移動してしまうので、この処理が必要となる。
+
+```bat
+cd /d %~dp0
+```
