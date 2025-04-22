@@ -72,7 +72,7 @@ if ((Test-Path $LogFilePath) -eq $true) {
     # 出力先ファイルの最終行を読み取って正規表現で各項目に分割し、内容を取得する。
     # 読み取れた内容に応じて書き込み内容を変更する。
     #------------------------------------------------------------------------------
-    $IsMatched = (Get-Content -Tail 1 -Path $LogFilePath -Encoding UTF8) -match "^(?<Date>.+)\t(?<StartedDateTime>.+)\t(?<FinishedDateTime>.+)\t(?<WorkedTime>.+)\t(?<DesktopName>.+)$"
+    $IsMatched = (Get-Content -Tail 1 -Path $LogFilePath -Encoding UTF8) -match "^(?<Date>.+)\t(?<StartedDateTime>.+)\t(?<FinishedDateTime>.+)\t(?<WorkedTime>.+)\t(?<DesktopName>.*)$"
 
     #------------------------------------------------------------------------------
     # 最終行が正しく書き込まれている場合、正規表現と一致する。
@@ -89,27 +89,40 @@ if ((Test-Path $LogFilePath) -eq $true) {
         # 最終行以外の行を取得する。
         $Content = Get-Content -Path $LogFilePath | Select-Object -SkipLast 1 | Out-String
 
+        # 作業時間を算出する。
+        $ElapsedHours = $CurrentDateTime - [DateTime]::ParseExact($Matches['StartedDateTime'], "yyyy/MM/dd HH:mm", $null)
+        $WorkedTime = [String]::Format("{0:F1}", $ElapsedHours.TotalHours) # "{0:F1}" -f xx.TotalHours とも書ける。
+
         if ($Matches['DesktopName'] -eq $CurrentDesktopName) {
+
             # 最終行のデスクトップ名と現在のデスクトップ名が等しい場合、作業を継続しているとみなして終了時刻を現在時刻へ更新する。
             # ただし、 PC 起動時は作業の継続ではないとみなし、最終行を更新せずに次の行へ追記する。
             if ($EventID -eq [EventIDs]::PowerOn.Value__) {
-
+                
                 Add-Content -Path $LogFilePath -Value "`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
 
             } else {
-                $ElapsedHours = $CurrentDateTime - [DateTime]::ParseExact($Matches['StartedDateTime'], "yyyy/MM/dd HH:mm", $null)
-                $WorkedTime = [String]::Format("{0:F1}", $ElapsedHours.TotalHours) # "{0:F1}" -f xx.TotalHours とも書ける。
-
+                
                 Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])" -NoNewline -Encoding UTF8
+
             }
         } else {
 
             # 最終行のデスクトップ名と現在のデスクトップ名が等しくない場合、別の作業を開始しているとみなす。
             # そのため、最終行の終了時刻に現在時刻を記録し、次の行に現在時刻で作業を開始した旨を追記する。
-            $ElapsedHours = $CurrentDateTime - [DateTime]::ParseExact($Matches['StartedDateTime'], "yyyy/MM/dd HH:mm", $null)
-            $WorkedTime = [String]::Format("{0:F1}", $ElapsedHours.TotalHours) # "{0:F1}" -f xx.TotalHours とも書ける。
+            #
+            # ただし、起動時・終了時はデスクトップ名を取得できない可能性が高い（ユーザーがログオフしてから処理が動く可能性が高いため。）
+            # その場合に対応するため、取得したデスクトップ名が空文字の場合は最終行を更新する形とする。
+            if ($CurrentDesktopName -eq $null -or
+                $CurrentDesktopName -eq "") {
+                
+                Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])" -NoNewline -Encoding UTF8
 
-            Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`r`n$($Matches['Date'])`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+            } else {
+                
+                Add-Content -Path $LogFilePath -Value "`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
+
+            }
 
         }
     } else {
@@ -120,7 +133,7 @@ if ((Test-Path $LogFilePath) -eq $true) {
     }
 } else {
 
-    # 出力先ファイルが存在しない場合、ファイルを新規作成して「年月日」、「開始時刻」、「終了時刻」「作業種別（デスクトップ名）」を書き込む。
+    # 出力先ファイルが存在しない場合、ファイルを新規作成して「年月日」、「開始時刻」、「終了時刻」「作業時間」、「作業種別（デスクトップ名）」を書き込む。
     Set-Content -Path $LogFilePath -Value "${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}" -NoNewline -Encoding UTF8
 
 }

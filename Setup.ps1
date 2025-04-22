@@ -40,7 +40,7 @@
 
   .parameter ActionType
 
-  "install" か "uninstall" のいずれかを指定する。
+  "Install" か "Uninstall" のいずれかを指定する。
 #>
 Param (
     [Parameter(Mandatory=$true)]
@@ -93,15 +93,15 @@ function IsTaskRegistered($TaskName) {
 <#
     Record-WorkedTimeAndDesktopName をインストールする。
 #>
-function Install($TaskName) {
+function Install($TaskName, $Windows11Edition) {
 
     #=====================================================
     # (1/2) Virtual Desktop モジュールをインストールする。
     #=====================================================
-    Write-Host "======================================================================"
+    Write-Host "===================================================================================="
     Write-Host "  ${TaskName} のインストール手続きを開始します。"
     Write-Host "  管理者権限ありで実行してください。"
-    Write-Host "======================================================================"
+    Write-Host "===================================================================================="
     Write-Host "(1/2) Virtual Desktop モジュールのインストール"
 
     # Virtual Desktop がインストールされている場合、ここでは何もしない。
@@ -140,7 +140,7 @@ function Install($TaskName) {
     Write-Host "      インストール後にフォルダを移動する場合は再度インストールを実施してください。"
 
     # インストールに利用する xml ファイルの元ネタファイルを読み込み、スクリプトのパスをカレントディレクトリに置換する。
-    $XmlContent = (Get-Content "./src/${TaskName}.xml.in" -Encoding Unicode).Replace("[@Install-Destination]", "$(Split-Path $PSCommandPath -Parent)")
+    $XmlContent = (Get-Content "./src/${TaskName}-${Windows11Edition}.xml.in" -Encoding Unicode).Replace("[@Install-Destination]", "$(Split-Path $PSCommandPath -Parent)")
     Set-Content -Path "./src/${TaskName}.xml" -Value $XmlContent -Encoding Unicode
 
     # タスクスケジューラーにタスク名 Record-WorkedTimeAndDesktopName が登録されている場合、
@@ -171,16 +171,28 @@ function Install($TaskName) {
 
     }
 
-    Write-Host "======================================================================"
-    Write-Host "  ${TaskName} のインストール手続きを完了しました。"
-    Write-Host "======================================================================"
+    Write-Host "===================================================================================="
+    Write-Host "  ${TaskName} をタスクスケジューラーへ登録しました。"
+
+    if ($Windows11Edition -eq "Core") {
+
+        Write-Host "  Windows 11 Home 向けのインストール手続きを完了完了しました。"
+
+    } else {
+
+        Write-Host "  Windows 11 ${Windows11Edition} をご利用の場合、引き続きローカルグループポリシーを起動し、"
+        Write-Host "  PowerShell スクリプトを登録してください。登録方法は README.md をご参照願います。"
+
+    }
+
+    Write-Host "===================================================================================="
 
 }
 
 <#
     Record-WorkedTimeAndDesktopName をアンインストールする。
 #>
-function Uninstall($TaskName) {
+function Uninstall($TaskName, $Windows11Edition) {
     
     #===================================================================================
     # (1/2) タスクスケジューラーからタスク Record-WorkedTimeAndDesktopName を削除する。
@@ -260,10 +272,11 @@ function Uninstall($TaskName) {
 # インストール / アンインストールを実行する。
 #=============================================
 $TaskName = "Record-WorkedTimeAndDesktopName"
+$Windows11Edition = (Get-ComputerInfo).WindowsEditionID
 
 switch ($ActionType) {
-    "Install" { Install $TaskName }
-    "Uninstall" { Uninstall $TaskName }
-    default { Write-Host "第1引数には install か uninstall を指定してください。" }
+    "Install" { Install $TaskName $Windows11Edition }
+    "Uninstall" { Uninstall $TaskName $Windows11Edition }
+    default { Write-Host "第1引数には Install か Uninstall を指定してください。" }
 }
 
