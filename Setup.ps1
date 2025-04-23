@@ -140,7 +140,11 @@ function Install($TaskName, $Windows11Edition) {
     Write-Host "      インストール後にフォルダを移動する場合は再度インストールを実施してください。"
 
     # インストールに利用する xml ファイルの元ネタファイルを読み込み、スクリプトのパスをカレントディレクトリに置換する。
-    $XmlContent = (Get-Content "./src/${TaskName}-${Windows11Edition}.xml.in" -Encoding Unicode).Replace("[@Install-Destination]", "$(Split-Path $PSCommandPath -Parent)")
+    # また、ユーザー SID をインストールを実行したユーザーの SID に置換する。
+    $ObjUser = New-Object System.Security.Principal.NTAccount($env:USERDOMAIN, $env:USERNAME)
+    $UserSid = $ObjUser.Translate([System.Security.Principal.SecurityIdentifier])
+
+    $XmlContent = (Get-Content "./src/${TaskName}-${Windows11Edition}.xml.in" -Encoding Unicode).Replace("[@Install-Destination]", "$(Split-Path $PSCommandPath -Parent)").Replace("[@UserSID]", "${UserSid}")
     Set-Content -Path "./src/${TaskName}.xml" -Value $XmlContent -Encoding Unicode
 
     # タスクスケジューラーにタスク名 Record-WorkedTimeAndDesktopName が登録されている場合、
