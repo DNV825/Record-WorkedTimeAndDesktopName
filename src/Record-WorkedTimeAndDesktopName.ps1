@@ -72,7 +72,7 @@ $UpdateMark = "<Update-before-start-or-after-finish>"
 # デバッグ用関数。
 function Debug-Output($Path, $Value) {
 
-    Add-Content -Path $Path -Value $Value -Encoding UTF8
+#    Add-Content -Path $Path -Value $Value -Encoding UTF8
 
 }
  
