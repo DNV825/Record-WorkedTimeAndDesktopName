@@ -180,7 +180,7 @@ function Install($TaskName, $Windows11Edition) {
 
     if ($Windows11Edition -eq "Core") {
 
-        Write-Host "  Windows 11 Home 向けのインストール手続きを完了完了しました。"
+        Write-Host "  Windows 11 Home 向けのインストール手続きを完了しました。"
 
     } else {
 
@@ -266,10 +266,21 @@ function Uninstall($TaskName, $Windows11Edition) {
 
     }
 
-    Write-Host "=========================================================================="
+    Write-Host "=========================================================================================="
     Write-Host "  ${TaskName} のアンインストール手続きを完了しました。"
-    Write-Host "=========================================================================="
 
+    if ($Windows11Edition -eq "Core") {
+
+        Write-Host "  Windows 11 Home 向けのアンインストール手続きを完了しました。"
+
+    } else {
+
+        Write-Host "  Windows 11 ${Windows11Edition} をご利用の場合、引き続きローカルグループポリシーを起動し、"
+        Write-Host "  PowerShell スクリプトの登録を解除してください。解除方法は README.md をご参照願います。"
+
+    }
+
+    Write-Host "=========================================================================================="
 }
 
 #=============================================
