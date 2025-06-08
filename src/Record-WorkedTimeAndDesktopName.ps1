@@ -70,9 +70,14 @@ $FinishMark = "<Finish>"
 $UpdateMark = "<Update-before-start-or-after-finish>"
 
 # デバッグ用関数。
+$IsDebugOn = $false
 function Debug-Output($Path, $Value) {
 
-#    Add-Content -Path $Path -Value $Value -Encoding UTF8
+    if ($IsDebugOn -eq $true) {
+
+        Add-Content -Path $Path -Value $Value -Encoding UTF8
+
+    }
 
 }
  
@@ -171,11 +176,25 @@ if ((Test-Path $LogFilePath) -eq $true) {
                     Debug-Output -Path $DebugLogFilePath -Value "--`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])${FinishMark}:2-1 PowerOff"
  
                 }
-                # デスクトップ名が取得できた場合は行を追加する。
+                # デスクトップ名が取得できた場合。は行を追加する。
                 else {
  
-                    Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t${CurrentDesktopName}`t$($Matches['StartFinishMark'])${FinishMark}" -NoNewline -Encoding UTF8
-                    Debug-Output -Path $DebugLogFilePath -Value "--`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t${CurrentDesktopName}`t$($Matches['StartFinishMark'])${FinishMark}:2-2 PowerOff"
+                    # 同じデスクトップ名を取得出来た場合、作業を継続しているとみなして同じ行を更新する。
+                    # 更新した行にはフィニッシュマークを付与する。
+                    if ($Matches['DesktopName'] -eq $CurrentDesktopName) {
+                    
+                        Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])${FinishMark}" -NoNewline -Encoding UTF8
+                        Debug-Output -Path $DebugLogFilePath -Value "--`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])${FinishMark}:2-2 PowerOff"
+                        
+                    }
+                    # 異なるデスクトップ名を取得できた場合、最後に別の作業を行ったと判断して行を追加する。
+                    # 追加した行にはフィニッシュマークを付与する。
+                    else {
+
+                        Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t${FinishMark}" -NoNewline -Encoding UTF8
+                        Debug-Output -Path $DebugLogFilePath -Value "--`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t${FinishMark}:2-3 PowerOff"
+
+                    }
  
                 }
 
@@ -223,7 +242,7 @@ if ((Test-Path $LogFilePath) -eq $true) {
     else {
     
         Add-Content -Path $LogFilePath -Value "<Something wrong!>`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t" -NoNewline -Encoding UTF8
-        Add-Content -Path $DebugLogFilePath -Value "<Something wrong!>`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t:5 something wrong" -Encoding UTF8
+        Debug-Output -Path $DebugLogFilePath -Value "<Something wrong!>`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t:5 something wrong" -Encoding UTF8
     
     }
 }
@@ -231,6 +250,6 @@ if ((Test-Path $LogFilePath) -eq $true) {
 else {
     
     Set-Content -Path $LogFilePath -Value "${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t" -NoNewline -Encoding UTF8
-    Add-Content -Path $DebugLogFilePath -Value "${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t:6 Create File" -Encoding UTF8
+    Debug-Output -Path $DebugLogFilePath -Value "${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t:6 Create File" -Encoding UTF8
     
 }
