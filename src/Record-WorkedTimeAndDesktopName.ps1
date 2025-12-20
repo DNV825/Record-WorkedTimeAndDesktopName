@@ -54,12 +54,14 @@ Enum EventIDs {
 # プロジェクトフォルダ配下の log フォルダへログファイルを出力する。
 # 別の場所に置きたい場合は好きなパスを指定すればよい。
 $LogFilePath = "$(Split-Path $PSCommandPath -Parent)\..\log\Record-WorkedTimeAndDesktopName.log"
+$BackupLogFilePath = "$(Split-Path $PSCommandPath -Parent)\..\log\Record-WorkedTimeAndDesktopName.bk.log"
 $DebugLogFilePath = "$(Split-Path $PSCommandPath -Parent)\..\log\DebugRecord-WorkedTimeAndDesktopName.log"
 
 # 記録する日時とデスクトップ名を取得する。
 # わかりやすさのため、日付部分だけを変数化しておく（半角スペースで分割し、日付部分だけを取り出す。）
 $CurrentDateTime = Get-Date
 $CurrentDateTimeFormatted = $CurrentDateTime.ToString("yyyy/MM/dd HH:mm")
+$CurrentDateTimeFormattedForBackupLog = $CurrentDateTime.ToString("yyyy-MM-dd_HH-mm-ss")
 $CurrentDate = (-split $CurrentDateTimeFormatted)[0]
 $CurrentDesktopName = Get-DesktopName
 
@@ -86,7 +88,7 @@ function Debug-Output($Path, $Value) {
 # 存在しない場合は初めてスクリプトを動かしたとみなしてファイルを新規作成する。
 #------------------------------------------------------------------------------
 if ((Test-Path $LogFilePath) -eq $true) {
-   
+
     #------------------------------------------------------------------------------
     # 出力先ファイルの最終行を読み取って正規表現で各項目に分割し、内容を取得する。
     # 読み取れた内容に応じて書き込み内容を変更する。
@@ -105,6 +107,11 @@ if ((Test-Path $LogFilePath) -eq $true) {
     #------------------------------------------------------------------------------
     if ($IsMatched -eq $true) {
  
+        #----------------------------------------------------------------
+        # 出力先ファイルをコピーし、バックアップファイルとして保存する。
+        #----------------------------------------------------------------
+        Copy-Item -Path $LogFilePath -Destination $BackupLogFilePath
+
         # 最終行以外の行を取得する。
         $Content = Get-Content -Path $LogFilePath | Select-Object -SkipLast 1 | Out-String
  
@@ -238,9 +245,13 @@ if ((Test-Path $LogFilePath) -eq $true) {
         }
     
     }
-    # 最終行の記述が想定通りでない場合、"<Something wrong!>"、改行、「年月日」、「開始時刻」、「作業時間」、「作業種別（デスクトップ名）」を書き込む。
+    # 最終行の記述が想定通りでない場合、バックアップファイルに日付時刻を付与してさらにバックアップする。
+    # その後、"<Something wrong!>"、改行、「年月日」、「開始時刻」、「作業時間」、「作業種別（デスクトップ名）」を書き込む。
     else {
     
+        $BackupLogFilePathNow = $BackupLogFilePath -replace "bk" , $CurrentDateTimeFormattedForBackupLog
+        Copy-Item -Path $BackupLogFilePath -Destination $BackupLogFilePathNow
+        
         Add-Content -Path $LogFilePath -Value "<Something wrong!>`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t" -NoNewline -Encoding UTF8
         Debug-Output -Path $DebugLogFilePath -Value "<Something wrong!>`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t:5 something wrong" -Encoding UTF8
     
