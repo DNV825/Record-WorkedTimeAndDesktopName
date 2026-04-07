@@ -151,6 +151,8 @@ Excel やメモ帳（ notepad.exe ）はファイルをダブルクリックし�
 
 ## バージョン
 
+- v0.5.0, 2026-04-07
+  - 0.3h PC を動かさずに Modern Standby 状態に遷移した場合、そこから 0.3h の間に復帰しなければ「放置」として記録するようにした
 - v0.4.0, 2025-12-20
   - 書き込み前に既存のログファイルをバックアップするようにした
   - something wrong と書き込む前に、バックアップしたログファイルに日付時刻を付与して別名保存するようにした
@@ -195,3 +197,15 @@ Excel やメモ帳（ notepad.exe ）はファイルをダブルクリックし�
 - Xelu86 / Saisang / robinharwood / ktoliver / eross-msft, schtasks create, Microsoft Learn, 2023-10-10, <https://learn.microsoft.com/ja-jp/windows-server/administration/windows-commands/schtasks-create>
 - robinharwood / Saisang / eross-msft, schtasks delete, Microsoft Learn, 2025-03-25, <https://learn.microsoft.com/ja-jp/windows-server/administration/windows-commands/schtasks-delete>
 - rone, バッチファイルでタスクスケジューラにタスクを追加する, note, 2021-08-22, <https://note.com/nerone1024/n/n5e470a82064f>
+
+### モダン スタンバイ（Modern Standby）について
+
+- -, モダン スタンバイの SleepStudy, Microsoft Learn, 2023/06/20, <https://learn.microsoft.com/ja-jp/windows-hardware/design/device-experiences/modern-standby-sleepstudy>
+
+### WMI クラスについて
+
+WMI（Windows Management Instrumentation）
+
+- - コンピューターに関する情報の収集, Microsoft Learn, 2024/11/28, <https://learn.microsoft.com/ja-jp/powershell/scripting/samples/collecting-information-about-computers?view=powershell-7.6&viewFallbackFrom=powershell-7.1>
+- -, WMI クラス, Microsoft Learn, 2025/03/12, <https://learn.microsoft.com/ja-jp/windows/win32/wmisdk/wmi-classes>
+- guitarrapc_tech, PowerShellでWmiクラスの一覧を参照したい, tech.guitarrapc.cóm Technical Updates, 2025/05/07, <https://tech.guitarrapc.com/entry/2013/01/29/150112>
