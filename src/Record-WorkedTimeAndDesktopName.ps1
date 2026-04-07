@@ -326,36 +326,6 @@ if ((Test-Path $LogFilePath) -eq $true) {
                 # 許容時間を超えてから復帰した場合は「放置」のままにする。
                 if ($Matches['DesktopName'] -eq $LeftDesktopName) {
                     
-                    <#
-                    # System/Kernel-Power から Modern Standby の開始/終了状態を取得する。
-                    # ID: 506 と ID: 507 を両方ともイベントログから取得し、
-                    #   ・最新のログが ID: 506 であれば Modern Standby 開始状態
-                    #   ・最新のログが ID: 507 であれば Modern Standby 終了状態
-                    # であると判定できる。
-                    $LastModernStandbyEvent = (Get-WinEvent -FilterHashtable @{
-                                            LogName = 'System';
-                                            ProviderName = 'Microsoft-Windows-Kernel-Power';
-                                            Id = 506, 507; } -MaxEvents 1)
-
-                    # 最後の Modern Standby 開始イベントを取得する。
-                    $LastModernStandbyStartEvent = (Get-WinEvent -FilterHashtable @{
-                                                LogName = 'System';
-                                                ProviderName = 'Microsoft-Windows-Kernel-Power';
-                                                Id = 506; } -MaxEvents 1)
-
-                    # 最後の Modern Standby 開始イベントの作成日時を取得する。
-                    $LastModernStandbyStartEventCreatedDate = $LastModernStandbyStartEvent.TimeCreated.ToString("yyyy/MM/dd HH:mm")
-
-
-                    # 放置時間を算出する。現在時刻から Modern Standby 開始イベントの開始時刻を減算して求める。
-                    # 放置時間は比較を行うため Int に型変換する。
-                    $LeftDateTime = $CurrentDateTime - [DateTime]::ParseExact($LastModernStandbyStartEventCreatedDate, "yyyy/MM/dd HH:mm", $null)
-                    $IntLeftHours = [Int]([Float]([String]::Format("{0:F1}", $LeftDateTime.TotalHours)) * 10) # "{0:F1}" -f xx.TotalHours とも書ける。
-
-                    # 現在の稼働時間と放置判定する時間を比較するため、Int 型に置換する。
-                    $IntLeavingLimitHours = [Int]([Float]$LeavingLimitHours * 10)
-                    #>
-
                     # Modern Standby 開始状態である場合は引き続き「放置」として記録する。
                     if ($LastModernStandbyEvent.Id -eq [EventIDs]::ModernStandbyStart.Value__) {
                         
@@ -394,9 +364,6 @@ if ((Test-Path $LogFilePath) -eq $true) {
                         }
     
                     }
-
-                    # Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t${CurrentDesktopName}`t$($Matches['StartFinishMark'])" -NoNewline -Encoding UTF8
-                    # Debug-Output -Path $DebugLogFilePath -Value "-- 5-5 Update;`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t${CurrentDesktopName}`t$($Matches['StartFinishMark'])"
 
                 }
                 # 同じデスクトップ名を取得出来た場合、作業を継続しているとみなして同じ行を更新する。
