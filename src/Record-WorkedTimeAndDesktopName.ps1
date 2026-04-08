@@ -120,21 +120,31 @@ $LeavingLimitHours = 0.3  # 0.3h (= 18m).
 $LastModernStandbyEvent = (Get-WinEvent -FilterHashtable @{
                         LogName = 'System';
                         ProviderName = 'Microsoft-Windows-Kernel-Power';
-                        Id = 506, 507; } -MaxEvents 1)
+                        Id = 506, 507; } -MaxEvents 1 -ErrorAction SilentlyContinue)
 
 # 最後の Modern Standby 開始イベントを取得する。
 $LastModernStandbyStartEvent = (Get-WinEvent -FilterHashtable @{
                             LogName = 'System';
                             ProviderName = 'Microsoft-Windows-Kernel-Power';
-                            Id = 506; } -MaxEvents 1)
+                            Id = 506; } -MaxEvents 1 -ErrorAction SilentlyContinue)
 
 # 最後の Modern Standby 開始イベントの作成日時を取得する。
-$LastModernStandbyStartEventCreatedDate = $LastModernStandbyStartEvent.TimeCreated.ToString("yyyy/MM/dd HH:mm")
+# イベントを取得できない場合は Modern Standby 中ではないものとして扱えるように $null を設定する。
+$LastModernStandbyStartEventCreatedDate = $null
+if ($null -ne $LastModernStandbyStartEvent) {
+    $LastModernStandbyStartEventCreatedDate = $LastModernStandbyStartEvent.TimeCreated.ToString("yyyy/MM/dd HH:mm")
+}
 
 # 放置時間を算出する。現在時刻から Modern Standby 開始イベントの開始時刻を減算して求める。
 # 放置時間は比較を行うため Int に型変換する。
-$LeftDateTime = $CurrentDateTime - [DateTime]::ParseExact($LastModernStandbyStartEventCreatedDate, "yyyy/MM/dd HH:mm", $null)
-$IntLeftHours = [Int]([Float]([String]::Format("{0:F1}", $LeftDateTime.TotalHours)) * 10) # "{0:F1}" -f xx.TotalHours とも書ける。
+# Modern Standby 開始イベントが存在しない環境では放置時間を 0 とする。
+if ($null -ne $LastModernStandbyStartEventCreatedDate) {
+    $LeftDateTime = $CurrentDateTime - [DateTime]::ParseExact($LastModernStandbyStartEventCreatedDate, "yyyy/MM/dd HH:mm", $null)
+    $IntLeftHours = [Int]([Float]([String]::Format("{0:F1}", $LeftDateTime.TotalHours)) * 10) # "{0:F1}" -f xx.TotalHours とも書ける。
+}
+else {
+    $IntLeftHours = 0
+}
 
 # 現在の稼働時間と放置判定する時間を比較するため、Int 型に置換する。
 $IntLeavingLimitHours = [Int]([Float]$LeavingLimitHours * 10)
@@ -301,7 +311,7 @@ if ((Test-Path $LogFilePath) -eq $true) {
             else {
 
                 Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${LeftDesktopName}`t" -NoNewline -Encoding UTF8
-                Debug-Output -Path $DebugLogFilePath -Value "-- 4-2 ModernStandbyStart; `$EventID: $EventID`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t"
+                Debug-Output -Path $DebugLogFilePath -Value "-- 4-2 ModernStandbyStart; `$EventID: $EventID`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${LeftDesktopName}`t"
 
             }
 
