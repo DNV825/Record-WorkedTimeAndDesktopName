@@ -69,7 +69,7 @@ Enum EventIDs {
     FastShutdown = 187;        # 高速シャットダウン                   System/Kernel-Power: 187
     Shutdown = 109;            # シャットダウン                       System/Kernel-Power: 109
     PowerOn = 27;              # パワーオン                           System/Kernel-Boot:   27
-    Hybernate = 109;           # 休止状態                             System/Kernel-Power: 109
+    Hibernate = 109;           # 休止状態                             System/Kernel-Power: 109
     ModernStandbyStart = 506;  # Modern Standby 開始（画面消灯など）  System/Kernel-Power: 506
     ModernStandbyEnd = 507;    # Modern Standby 終了（画面点灯）      System/Kernel-Power: 507
 }
@@ -109,9 +109,9 @@ $CurrentDesktopName = Get-DesktopName
 $LeftDesktopName = '放置'
 $LeavingLimitHours = 0.3  # 0.3h (= 18m).
 
-#--------
-#
-#--------
+#----------------------
+# 放置時間判定用変数。
+#----------------------
 # System/Kernel-Power から取得する Modern Standby の開始/終了状態。
 # ID: 506 と ID: 507 を両方ともイベントログから取得し、
 #   ・最新のログが ID: 506 であれば Modern Standby 開始状態
@@ -128,16 +128,22 @@ $LastModernStandbyStartEvent = (Get-WinEvent -FilterHashtable @{
                             ProviderName = 'Microsoft-Windows-Kernel-Power';
                             Id = 506; } -MaxEvents 1)
 
-# 最後の Modern Standby 開始イベントの作成日時を取得する。
-$LastModernStandbyStartEventCreatedDate = $LastModernStandbyStartEvent.TimeCreated.ToString("yyyy/MM/dd HH:mm")
+# 放置時間。比較を行うため、後ほど10 倍して Int 型に変換した値を割り当てる。
+$IntLeftHours = 0
 
-# 放置時間を算出する。現在時刻から Modern Standby 開始イベントの開始時刻を減算して求める。
-# 放置時間は比較を行うため Int に型変換する。
-$LeftDateTime = $CurrentDateTime - [DateTime]::ParseExact($LastModernStandbyStartEventCreatedDate, "yyyy/MM/dd HH:mm", $null)
-$IntLeftHours = [Int]([Float]([String]::Format("{0:F1}", $LeftDateTime.TotalHours)) * 10) # "{0:F1}" -f xx.TotalHours とも書ける。
+# Modern Standby イベントが取得できた場合、放置時間を算出する。
+if ($LastModernStandbyStartEvent -ne $null) {
+    # 最後の Modern Standby 開始イベントの作成日時を取得する。
+    $LastModernStandbyStartEventCreatedDate = $LastModernStandbyStartEvent.TimeCreated.ToString("yyyy/MM/dd HH:mm")
 
-# 現在の稼働時間と放置判定する時間を比較するため、Int 型に置換する。
-$IntLeavingLimitHours = [Int]([Float]$LeavingLimitHours * 10)
+    # 放置時間を算出する。現在時刻から Modern Standby 開始イベントの開始時刻を減算して求める。
+    # 放置時間は比較を行うため Int に型変換する。
+    $LeftDateTime = $CurrentDateTime - [DateTime]::ParseExact($LastModernStandbyStartEventCreatedDate, "yyyy/MM/dd HH:mm", $null)
+    $IntLeftHours = [Int][Math]::Floor($LeftDateTime.TotalMinutes / 6)
+
+    # 現在の稼働時間と放置判定する時間を比較するため、Int 型に置換する。
+    $IntLeavingLimitHours = [Int][Math]::Floor([Double]$LeavingLimitHours * 10)
+}
 
 #----------------------------------------------------------------------------------------
 # 開始・終了時に書き込む目印。
@@ -228,7 +234,7 @@ if ((Test-Path $LogFilePath) -eq $true) {
         #----------------
         elseif ($EventID -eq [EventIDs]::FastShutdown.Value__ -or
                 $EventID -eq [EventIDs]::Shutdown.Value__ -or
-                $EventID -eq [EventIDs]::Hybernate.Value__) {
+                $EventID -eq [EventIDs]::Hibernate.Value__) {
  
             # 終了時の処理は連続で呼ばれることがある。
             # そのため、取得した最終行にフィニッシュマークが存在する場合は何もしない。
@@ -301,7 +307,7 @@ if ((Test-Path $LogFilePath) -eq $true) {
             else {
 
                 Set-Content -Path $LogFilePath -Value "${Content}$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${LeftDesktopName}`t" -NoNewline -Encoding UTF8
-                Debug-Output -Path $DebugLogFilePath -Value "-- 4-2 ModernStandbyStart; `$EventID: $EventID`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${CurrentDesktopName}`t"
+                Debug-Output -Path $DebugLogFilePath -Value "-- 4-2 ModernStandbyStart; `$EventID: $EventID`r`n$($Matches['Date'])`t$($Matches['StartedDateTime'])`t${CurrentDateTimeFormatted}`t${WorkedTime}`t$($Matches['DesktopName'])`t$($Matches['StartFinishMark'])`r`n${CurrentDate}`t${CurrentDateTimeFormatted}`t${CurrentDateTimeFormatted}`t0.0`t${LeftDesktopName}`t"
 
             }
 
