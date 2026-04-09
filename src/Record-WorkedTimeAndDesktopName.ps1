@@ -120,13 +120,13 @@ $LeavingLimitHours = 0.3  # 0.3h (= 18m).
 $LastModernStandbyEvent = (Get-WinEvent -FilterHashtable @{
                         LogName = 'System';
                         ProviderName = 'Microsoft-Windows-Kernel-Power';
-                        Id = 506, 507; } -MaxEvents 1)
+                        Id = 506, 507; } -MaxEvents 1 -ErrorAction SilentlyContinue)
 
 # 最後の Modern Standby 開始イベントを取得する。
 $LastModernStandbyStartEvent = (Get-WinEvent -FilterHashtable @{
                             LogName = 'System';
                             ProviderName = 'Microsoft-Windows-Kernel-Power';
-                            Id = 506; } -MaxEvents 1)
+                            Id = 506; } -MaxEvents 1 -ErrorAction SilentlyContinue)
 
 # 放置時間。比較を行うため、後ほど10 倍して Int 型に変換した値を割り当てる。
 $IntLeftHours = 0
